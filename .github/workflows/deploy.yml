@@ -17,12 +17,20 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Build and Push Docker Image via ACR Cloud Tasks
+      - name: Log in to Azure Container Registry (ACR)
         run: |
-          az acr build \
-            --registry mymlregistry2026 \
-            --image ml-prediction-service:${{ github.sha }} \
-            --image ml-prediction-service:latest .
+          az acr login --name mymlregistry2026
+
+      - name: Download Model File
+        run: |
+          # Replace this URL with a direct download link to your car.pkl (e.g., from Google Drive, GitHub Release, or Azure Blob)
+          curl -L "YOUR_DIRECT_DOWNLOAD_URL_FOR_CAR_PKL" -o car.pkl
+
+      - name: Build and Push Docker Image Locally
+        run: |
+          docker build --platform linux/amd64 -t mymlregistry2026.azurecr.io/ml-prediction-service:${{ github.sha }} -t mymlregistry2026.azurecr.io/ml-prediction-service:latest .
+          docker push mymlregistry2026.azurecr.io/ml-prediction-service:${{ github.sha }}
+          docker push mymlregistry2026.azurecr.io/ml-prediction-service:latest
 
       - name: Update Azure Container App
         run: |
