@@ -21,6 +21,11 @@ jobs:
         run: |
           az acr login --name mymlregistry2026
 
+      # OPTIONAL: If your model is stored externally, download it here:
+      # - name: Download Model File
+      #   run: |
+      #     curl -L "YOUR_MODEL_DIRECT_DOWNLOAD_URL" -o car.pkl
+
       - name: Build and Push Docker Image
         run: |
           docker build --platform linux/amd64 -t mymlregistry2026.azurecr.io/ml-prediction-service:${{ github.sha }} -t mymlregistry2026.azurecr.io/ml-prediction-service:latest .
