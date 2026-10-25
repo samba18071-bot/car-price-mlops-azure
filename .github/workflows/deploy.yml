@@ -17,20 +17,12 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Log in to Azure Container Registry (ACR)
+      - name: Build and Push Docker Image via ACR Cloud Tasks
         run: |
-          az acr login --name mymlregistry2026
-
-      # OPTIONAL: If your model is stored externally, download it here:
-      # - name: Download Model File
-      #   run: |
-      #     curl -L "YOUR_MODEL_DIRECT_DOWNLOAD_URL" -o car.pkl
-
-      - name: Build and Push Docker Image
-        run: |
-          docker build --platform linux/amd64 -t mymlregistry2026.azurecr.io/ml-prediction-service:${{ github.sha }} -t mymlregistry2026.azurecr.io/ml-prediction-service:latest .
-          docker push mymlregistry2026.azurecr.io/ml-prediction-service:${{ github.sha }}
-          docker push mymlregistry2026.azurecr.io/ml-prediction-service:latest
+          az acr build \
+            --registry mymlregistry2026 \
+            --image ml-prediction-service:${{ github.sha }} \
+            --image ml-prediction-service:latest .
 
       - name: Update Azure Container App
         run: |

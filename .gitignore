@@ -12,3 +12,6 @@ mlruns/
 .env.*
 !.env.example
 /car.pkl
+car.pkl
+car.pkl
+car.pkl
