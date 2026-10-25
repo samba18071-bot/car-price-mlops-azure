@@ -23,8 +23,7 @@ jobs:
 
       - name: Download Model File
         run: |
-          # Replace this URL with a direct download link to your car.pkl (e.g., from Google Drive, GitHub Release, or Azure Blob)
-          curl -L "YOUR_DIRECT_DOWNLOAD_URL_FOR_CAR_PKL" -o car.pkl
+          curl -L "https://github.com/samba18071-bot/my_ml/releases/download/v.1.0.0/car.pkl" -o car.pkl
 
       - name: Build and Push Docker Image Locally
         run: |
