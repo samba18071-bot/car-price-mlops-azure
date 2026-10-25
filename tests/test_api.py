@@ -1,11 +1,17 @@
+import sys
+import os
+
+# Adds the root project directory to Python's path so it can locate app.py
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from fastapi.testclient import TestClient
-from app import app  # Imports your FastAPI instance from app.py
+from app import app  # Imports your FastAPI instance from app.py in the root directory
 
 client = TestClient(app)
 
 def test_read_root():
     response = client.get("/")
-    # Check if root returns 200 or docs redirect, or adjust based on your app root route
+    # Check if root returns 200, 404, or docs redirect
     assert response.status_code in [200, 404, 307]
 
 def test_prediction_endpoint():
