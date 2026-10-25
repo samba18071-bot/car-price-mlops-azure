@@ -1,48 +1,77 @@
-# app.py
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException, status
+from pydantic import BaseModel, Field
 import pickle
 import numpy as np
+from contextlib import asynccontextmanager
 
-# 1. Initialize FastAPI instance
-app = FastAPI(title="ML Prediction Service", version="1.0.0")
+# Global dictionary to hold our model in memory across requests
+ml_context = {}
 
-# 2. Load model binary
-try:
-    with open("car.pkl", "rb") as f:
-        model = pickle.load(f)
-except Exception as e:
-    model = None
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Load model ONCE on startup to maximize performance
+    try:
+        with open("car.pkl", "rb") as f:
+            ml_context["model"] = pickle.load(f)
+        print("Model 'car.pkl' loaded successfully into memory.")
+    except Exception as e:
+        print(f"Failed to load model on startup: {e}")
+        ml_context["model"] = None
+    
+    yield
+    
+    # Cleanup memory on shutdown
+    ml_context.clear()
 
-# 3. Define schema for input validation
-class InferenceRequest(BaseModel):
-    features: list[float]
+app = FastAPI(
+    title="Car Price Prediction API", 
+    version="1.0.0",
+    lifespan=lifespan
+)
 
-# 4. Root / Health-check endpoint
+# Define clear, named schema for incoming feature payload
+class CarFeatures(BaseModel):
+    present_price: float = Field(..., description="Present showroom price of the car (in lakhs)")
+    year: int = Field(..., description="Manufacturing year of the car")
+    driven_kms: int = Field(..., description="Total kilometers driven")
+    fuel_type: int = Field(..., description="Fuel type encoded (e.g., Petrol/Diesel/CNG)")
+    selling_type: int = Field(..., description="Selling type encoded (Dealer/Individual)")
+    transmission: int = Field(..., description="Transmission type (Manual/Automatic)")
+    owner: int = Field(..., description="Number of previous owners")
+
 @app.get("/")
 def health_check():
-    if model is None:
-        raise HTTPException(status_code=500, detail="Model file not found")
-    return {"status": "healthy", "service": "ML Inference API"}
+    """Liveness probe to ensure the service and model are active."""
+    if ml_context.get("model") is None:
+        raise HTTPException(status_code=503, detail="Model artifact not initialized.")
+    return {"status": "healthy", "service": "Car Price Prediction API"}
 
-# 5. Prediction endpoint
 @app.post("/predict")
-def predict(payload: InferenceRequest):
-    # your prediction code here
+def predict(data: CarFeatures):
+    model = ml_context.get("model")
     if model is None:
-        raise HTTPException(status_code=500, detail="Model artifact unavailable")
-    
-    try:
-        # Reshape flat list into a 2D array: shape (1, num_features)
-        input_data = np.array([payload.features])
-        raw_prediction = model.predict(input_data)
+        raise HTTPException(status_code=503, detail="Model unavailable in memory.")
         
-        # Extract scalar value
-        result = int(raw_prediction[0]) if hasattr(raw_prediction[0], "item") else raw_prediction[0]
+    try:
+        # Extract features into the 2D array expected by the model pipeline
+        features_array = np.array([[
+            data.present_price,
+            data.year,
+            data.driven_kms,
+            data.fuel_type,
+            data.selling_type,
+            data.transmission,
+            data.owner
+        ]])
+            
+        prediction = model.predict(features_array)
+        
+        # Safely convert numpy scalar to python float
+        predicted_price = float(prediction[0].item() if hasattr(prediction[0], "item") else prediction[0])
         
         return {
-            "prediction": result,
+            "predicted_selling_price_lakhs": predicted_price,
             "status": "success"
         }
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Inference error: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Inference computation error: {str(e)}")
