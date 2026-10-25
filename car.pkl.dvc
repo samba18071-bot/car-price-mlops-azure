@@ -1,0 +1,5 @@
+outs:
+- md5: d40083bbb03a56f8b3f5897c1d9f90f4
+  size: 133545109
+  hash: md5
+  path: car.pkl

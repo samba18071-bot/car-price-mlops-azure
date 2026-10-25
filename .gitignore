@@ -1,0 +1,14 @@
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.DS_Store
+
+mlruns/
+.dvc/cache/
+.dvc/tmp/
+
+.env
+.env.*
+!.env.example
+/car.pkl
