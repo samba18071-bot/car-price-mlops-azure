@@ -12,6 +12,24 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Dependencies
+        run: |
+          pip install --no-cache-dir -r requirements.txt
+          pip install pytest httpx
+
+      - name: Download Model File
+        run: |
+          curl -L "https://github.com/samba18071-bot/my_ml/releases/download/v.1.0.0/car.pkl" -o car.pkl
+
+      - name: Run Automated Tests
+        run: |
+          pytest
+
       - name: Log in to Azure
         uses: azure/login@v2
         with:
@@ -20,10 +38,6 @@ jobs:
       - name: Log in to Azure Container Registry (ACR)
         run: |
           az acr login --name mymlregistry2026
-
-      - name: Download Model File
-        run: |
-          curl -L "https://github.com/samba18071-bot/my_ml/releases/download/v.1.0.0/car.pkl" -o car.pkl
 
       - name: Build and Push Docker Image Locally
         run: |
